@@ -1,10 +1,9 @@
+// Autor: Rodrigo Schio Wengenroth Silva.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/random.h>
-
-void testAll();
 
 typedef __uint128_t uint128;
 typedef __int128_t int128;
@@ -27,9 +26,9 @@ void init_bitArr() {
 	}
 }
 
-// bitlen returns the maximum bit lenght needed
-// to represent n.
+// bitlen returns the maximum bit lenght needed to represent n.
 int bitlen(uint128 n) {
+	// Lazy init.
 	if (bitArr[1] == 0) init_bitArr();
 	int i = 0;
 	for (i = 0; i < 128; i++) {
@@ -38,47 +37,6 @@ int bitlen(uint128 n) {
 		}
 	}
 	return i;
-}
-
-void print128(uint128 n) {
-	const uint64_t d64 = UINT64_C(1000000000000000000);
-	uint64_t v0 = (uint64_t)(n % d64);
-	n /= d64;
-	uint64_t v1 = (uint64_t)(n % d64);
-	n /= d64;
-	uint64_t v2 = (uint64_t)(n % d64);
-	printf("%llu%018llu%018llu", v2, v1, v0);
-}
-
-uint128 myPow(int x, int y) {
-	uint128 r = 1;
-	int i = 0;
-	for (i = 0; i < y; i++) r *= (uint128)x;
-	return r;
-}
-
-void scanf128(uint128 *d) {
-	const uint64_t d64 = UINT64_C(1000000000000000000);
-	char buf[40] = {0};
-	scanf("%39s", buf);
-	int len = strlen(buf);
-	int offset = 0;
-	
-	if (len > 36) {
-		*d += (uint128)atoll(&buf[36]);
-		offset = len - 36;
-	}
-	if (len > 18) {
-		int size = len - 18 - offset;
-		char s[19] = {0};
-		memcpy(s, &buf[18], size);
-		*d += (uint128)((uint128)(atoll(s)) * myPow(10, offset));
-		offset += size;
-	}
-	int size = len - offset;
-	char s[19] = {0};
-	memcpy(s, buf, size);
-	*d += (uint128)((uint128)(atoll(s)) * myPow(10, offset));
 }
 
 // randIntN returns a uniform random value in [2, max).
@@ -118,7 +76,7 @@ uint64_t multMod(uint64_t a, uint64_t b, uint64_t n) {
 	}
 	return (uint128)((uint128)(a % n) * (uint128)(b % n)) % (uint128)n;
 }
-//
+
 // calcN calculate a n that is p * q and will be used
 // to do mod of some operations.
 static inline uint128 calcN(uint64_t p, uint64_t q) {
@@ -135,6 +93,7 @@ static uint64_t __modInverse(uint64_t u, uint64_t v, uint64_t *gcd) {
 	uint128 w = 0;
 	uint128 t = 0;
 	
+	// fix the alg.
 	int bitIt = 1;
 	while(v != 0) {
 		uint64_t q = u / v;
@@ -143,7 +102,6 @@ static uint64_t __modInverse(uint64_t u, uint64_t v, uint64_t *gcd) {
 		u = v;
 		v = r;
 		// ---
-
 		w = q * y;
 		t = x + w;
 		x = y;
@@ -164,6 +122,7 @@ uint64_t modInverse(uint64_t u, uint64_t v) {
 	return __modInverse(u, v, &gcd) * (gcd == 1);
 }
 
+// verifynsv verify if n s and v are corrects.
 int verifynsv(uint64_t n, uint64_t s, uint64_t v) {
 	if (n < 3) return 0;
 	if (2 > s || s >= n) return 0;
@@ -175,6 +134,7 @@ int verifynsv(uint64_t n, uint64_t s, uint64_t v) {
 	return a == 1;
 }
 
+// fFunc is the fabio function.
 void fFunc() {
 	uint64_t n = 0;
 	uint64_t s = 0;
@@ -248,6 +208,7 @@ void fFunc() {
 	}
 }
 
+// pFunc is the Patricia function.
 void pFunc(){
 	pu128 randSrc = {0};
 	uint64_t n, v, x, xb = 0;
@@ -306,6 +267,10 @@ validate:
 			}
 			t--;
 			printf("C %d\n", t);
+			if (t == 0) {
+				n = 0;
+				goto reset;
+			}
 			break;
 		case 'C':
 		case 'c':
@@ -327,6 +292,7 @@ validate:
 	}
 }
 
+// tFunc is the Teodoro function.
 void tFunc() {
 	int32_t p = 0;
 	int32_t q = 0;
@@ -360,7 +326,7 @@ void tFunc() {
 		case 'F':
 		case 'f':
 			scanf("%llu", &s);
-			if (n == 0) {
+			if (n == 0 || 2 > s || s >= n) {
 				printf("E\n");
 				break;
 			}
@@ -382,6 +348,7 @@ void tFunc() {
 	}
 }
 
+// eFunc is the Ester function.
 void eFunc() {
 	uint64_t n = 0;
 	uint64_t v = 0;
@@ -428,6 +395,7 @@ void eFunc() {
 			break;
 		case 'T':
 		case 't':
+			printf("C\n");
 			return;
 		default:
 			break;
@@ -467,46 +435,4 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	return 0;
-}
-
-typedef struct Test {
-	uint64_t a;
-	uint64_t b;
-	uint64_t res;
-} Test;
-
-int modInvTest() {
-	Test tests[] = {
-		{57, 17, 3},
-		{17, 57, 47},
-		{23, 3, 2},
-		{529, 3, 1},
-		{3, 23, 8},
-		{1067463421, 1824995009, 1791914722},
-		{UINT64_C(68357683073), UINT64_C(127699163159), UINT64_C(47984622289)},
-		{UINT64_C(208683572579), UINT64_C(520774579561), UINT64_C(126225168557)},
-		{UINT64_C(115369598491750283), UINT64_C(260293555089852227), UINT64_C(189157070551562768)},
-		{UINT64_C(435678777661915687), UINT64_C(1076913623354244127), UINT64_C(370906033251607156)}
-
-	};
-	int size = sizeof(tests)/sizeof(tests[0]);
-	int ok = 0;
-	int i = 0;
-	for (i = 0; i < size; i++) {
-		uint64_t r = modInverse(tests[i].a, tests[i].b);
-		if (r != tests[i].res) {
-			printf("[FAIL] %llu %% %llu got: %llu want: %llu\n",
-				tests[i].a, tests[i].b, r, tests[i].res);
-			ok = 1;
-		} else {
-			printf("[SUCCESS] %llu %% %llu = %llu\n",
-				tests[i].a, tests[i].b, r);
-		}
-	}
-	if (ok == 0) printf("modInvTest ALL TESTS PASSED\n");
-	return ok;
-}
-
-void testAll() {
-	modInvTest();	
 }
